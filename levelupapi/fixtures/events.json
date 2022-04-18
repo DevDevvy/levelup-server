@@ -1,0 +1,25 @@
+[
+    {
+        "model": "levelupapi.event",
+        "pk": 1,
+        "fields": {
+            "description": "Board game night babaaay",
+            "game_date": "Thursday, April 33",
+            "time": "3pm",
+            "game_id": 2,
+            "organizer_id": 1
+        }
+    },
+    {
+        "model": "levelupapi.event",
+        "pk": 2,
+        "fields": {
+            "description": "war game night",
+            "game_date": "Foursday, May 33",
+            "time": "1pm",
+            "game_id": 1,
+            "organizer_id": 1
+        }
+    }
+    
+]
