@@ -5,7 +5,7 @@
             "name": "Python: Django",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/manage.py",
+            "program": "./request_handler.py",
             "args": ["runserver"],
             "django": true,
             "autoReload":{
