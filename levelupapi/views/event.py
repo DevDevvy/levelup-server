@@ -8,6 +8,7 @@ from levelupapi.models.game import Game
 from levelupapi.models.game_type import Game_type
 from levelupapi.models.gamer import Gamer
 from django.core.exceptions import ValidationError
+from rest_framework.decorators import action
 
 class EventView(ViewSet):
     """Level up game types view"""
@@ -36,6 +37,19 @@ class EventView(ViewSet):
         serializer.save(organizer=organizer)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    def update(self, request, pk):
+        """Handle PUT requests for a game
+
+        Returns:
+            Response -- Empty body with 204 status code
+        """
+        # pass data through serializer and validate
+        event = Event.objects.get(pk=pk)
+        serializer = CreateEventSerializer(event, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(None, status=status.HTTP_204_NO_CONTENT)
 
 
 
@@ -45,15 +59,47 @@ class EventView(ViewSet):
         Returns:
             Response -- JSON serialized list of game types
         """
-        event = Event.objects.all()
+        events = Event.objects.all()
+        gamer = Gamer.objects.get(user=request.auth.user)
         # check if string is a query ie /events?game=1
         event_game = request.query_params.get('game', None)
         if event_game is not None:
-            event = event.filter(game_id=event_game)
+            events = events.filter(game_id=event_game)
         
-        serializer = EventSerializer(event, many=True)
+        for event in events:
+            # Check to see if the gamer is in the attendees list on the event
+            event.joined = gamer in event.attendees.all()
+            serializer = EventSerializer(events, many=True)
         return Response(serializer.data)
+    # deletes event
+    def destroy(self, request, pk):
+        event = Event.objects.get(pk=pk)
+        event.delete()
+        return Response(None, status=status.HTTP_204_NO_CONTENT)
+        
+        # allows users to sing up using an @action decorator
+        # uses post method with detail=true because pk detail needed
+    @action(methods=['post'], detail=True)
+    def signup(self, request, pk):
+        """Post request for a user to sign up for an event"""
+    # get the gamer id and the event pk, then add to attendees many to many join table
+        gamer = Gamer.objects.get(user=request.auth.user)
+        event = Event.objects.get(pk=pk)
+        event.attendees.add(gamer)
+        return Response({'message': 'Gamer added'}, status=status.HTTP_201_CREATED)
+    # allows user to un-signup
+    @action(methods=['delete'], detail=True)
+    def leave(self, request, pk):
+        """Post request for a user to sign up for an event"""
     
+        gamer = Gamer.objects.get(user=request.auth.user)
+        event = Event.objects.get(pk=pk)
+        event.attendees.remove(gamer)
+        return Response({'message': 'Gamer left the party'}, status=status.HTTP_204_NO_CONTENT)
+    # Set the `joined` property on every event
+    
+
+               
 
 
 class EventSerializer(serializers.ModelSerializer):
@@ -61,7 +107,7 @@ class EventSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = Event
-        fields = ('id', 'description', 'game_date', 'time', 'game', 'organizer')
+        fields = ('id', 'description', 'game_date', 'time', 'game', 'organizer', 'joined')
         depth = 2
         
 
