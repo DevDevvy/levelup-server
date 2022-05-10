@@ -1,4 +1,5 @@
-"""View module for handling requests about game types"""
+"""View module for handling requests about events"""
+from email.policy import default
 from django.http import HttpResponseServerError
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
@@ -9,15 +10,17 @@ from levelupapi.models.game_type import Game_type
 from levelupapi.models.gamer import Gamer
 from django.core.exceptions import ValidationError
 from rest_framework.decorators import action
-
+from django.db.models import Count
+from django.db.models import Q
 class EventView(ViewSet):
-    """Level up game types view"""
+    """Level up events"""
     def retrieve(self, request, pk):
-        """Handle GET requests for single game type
+        """Handle GET requests for single event
         Returns:
-            Response -- JSON serialized game type
+            Response -- JSON serialized event
         """
         try:
+            events = Event.objects.annotate(attendees_count=Count('attendees'))
             event = Event.objects.get(pk=pk)
             serializer = EventSerializer(event)
             return Response(serializer.data)
@@ -29,7 +32,7 @@ class EventView(ViewSet):
     def create(self, request):
         """Handle POST operations
         Returns:
-            Response -- JSON serialized game instance
+            Response -- JSON serialized event
         """
         organizer = Gamer.objects.get(user=request.auth.user)
         serializer = CreateEventSerializer(data=request.data)
@@ -38,7 +41,7 @@ class EventView(ViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def update(self, request, pk):
-        """Handle PUT requests for a game
+        """Handle PUT requests for an event
 
         Returns:
             Response -- Empty body with 204 status code
@@ -54,23 +57,28 @@ class EventView(ViewSet):
 
 
     def list(self, request):
-        """Handle GET requests to get all game types
+        """Handle GET requests to get all events
 
         Returns:
-            Response -- JSON serialized list of game types
+            Response -- JSON serialized list of events
         """
-        events = Event.objects.all()
         gamer = Gamer.objects.get(user=request.auth.user)
+        events = Event.objects.annotate(
+            attendees_count=Count('attendees'),
+            joined=Count(
+                'attendees',
+                filter=Q(attendees=gamer)
+            )
+        )
         # check if string is a query ie /events?game=1
         event_game = request.query_params.get('game', None)
         if event_game is not None:
             events = events.filter(game_id=event_game)
-        
-        for event in events:
-            # Check to see if the gamer is in the attendees list on the event
-            event.joined = gamer in event.attendees.all()
-            serializer = EventSerializer(events, many=True)
+        serializer = EventSerializer(events, many=True)
         return Response(serializer.data)
+    
+    
+    
     # deletes event
     def destroy(self, request, pk):
         event = Event.objects.get(pk=pk)
@@ -105,9 +113,10 @@ class EventView(ViewSet):
 class EventSerializer(serializers.ModelSerializer):
     """JSON serializer for game types
     """
+    attendees_count = serializers.IntegerField(default=None)
     class Meta:
         model = Event
-        fields = ('id', 'description', 'game_date', 'time', 'game', 'organizer', 'joined')
+        fields = ('id', 'description', 'game_date', 'time', 'game', 'organizer', 'joined', 'attendees_count')
         depth = 2
         
 

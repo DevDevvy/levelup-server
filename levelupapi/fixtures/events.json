@@ -4,7 +4,7 @@
         "pk": 1,
         "fields": {
             "description": "Board game night babaaay",
-            "game_date": "Thursday, April 33",
+            "game_date": "2011-09-01",
             "time": "3pm",
             "game_id": 2,
             "organizer_id": 1
@@ -15,7 +15,7 @@
         "pk": 2,
         "fields": {
             "description": "war game night",
-            "game_date": "Foursday, May 33",
+            "game_date": "2011-09-05",
             "time": "1pm",
             "game_id": 1,
             "organizer_id": 1

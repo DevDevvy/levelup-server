@@ -7,6 +7,7 @@ from levelupapi.models.game import Game
 from levelupapi.models.game_type import Game_type
 from levelupapi.models.gamer import Gamer 
 from django.core.exceptions import ValidationError
+from django.db.models import Count
 
 class GameView(ViewSet):
     """Level up game types view"""
@@ -49,7 +50,8 @@ class GameView(ViewSet):
         game_type = request.query_params.get('type', None)
         if game_type is not None:
             games = games.filter(game_type_id=game_type)
-        
+        # adds event count to games - count is imported django function
+        games = Game.objects.annotate(event_count=Count('events'))
         serializer = GameSerializer(games, many=True)
         return Response(serializer.data)
     
@@ -75,9 +77,12 @@ class GameView(ViewSet):
 class GameSerializer(serializers.ModelSerializer):
     """JSON serializer for game types
     """
+    # tell serializer to expect new field for count 
+    event_count = serializers.IntegerField(default=None)
+
     class Meta:
         model = Game
-        fields = ('id', 'title', 'maker', 'number_of_players', 'skill_level', 'game_type', 'gamer')
+        fields = ('id', 'title', 'maker', 'number_of_players', 'skill_level', 'game_type', 'gamer', 'event_count')
         depth = 1
         
 # validates and saves new game
