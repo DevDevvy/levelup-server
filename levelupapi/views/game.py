@@ -78,15 +78,15 @@ class GameSerializer(serializers.ModelSerializer):
     """JSON serializer for game types
     """
     # tell serializer to expect new field for count 
-    event_count = serializers.IntegerField(default=None)
+    # event_count = serializers.IntegerField(default=None)
 
     class Meta:
         model = Game
-        fields = ('id', 'title', 'maker', 'number_of_players', 'skill_level', 'game_type', 'gamer', 'event_count')
+        fields = ('id', 'title', 'maker', 'number_of_players', 'skill_level', 'game_type', 'gamer')
         depth = 1
         
 # validates and saves new game
 class CreateGameSerializer(serializers.ModelSerializer):
     class Meta:
         model = Game
-        fields = ['id', 'title', 'maker', 'number_of_players', 'skill_level', 'game_type']
+        fields = [ 'title', 'maker', 'number_of_players', 'skill_level', 'game_type']
